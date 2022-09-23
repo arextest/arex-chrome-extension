@@ -1,0 +1,68 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport"
+          content="width=device-width, user-scalable=no, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>Document</title>
+</head>
+<body>
+<div id="box">
+    <button onclick="send()">点我发请求</button>
+    <div>返回值：<span class="res-val"></span></div>
+</div>
+</body>
+<script>
+    const AgentAxios =(payload) => new Promise((resolve, reject) => {
+        const tid = String(Math.random())
+        window.postMessage(
+            {
+                type: "__AREX_EXTENSION_REQUEST__",
+                payload:payload,
+                tid
+            },
+            "*"
+        )
+        window.addEventListener("message",receiveMessage)
+        function receiveMessage(ev) {
+            if (ev.data.type==="__AREX_EXTENSION_RES__"  && ev.data.tid === tid){
+                window.removeEventListener('message', receiveMessage, false)
+                if (ev.data.res.type === 'error'){
+                    const err = new Error()
+                    err.message = ev.data.res.message
+                    err.name = ev.data.res.name
+                    err.stack = ev.data.res.stack
+                    reject(err)
+                } else {
+                    resolve(ev.data.res)
+                }
+            }
+        }
+    })
+    function send() {
+        AgentAxios({
+            url:'https://blackhole-m.m.jd.com/getinfo',
+            method:'GET',
+            headers:{
+                c:'ccc',
+                cookie:'__tracker_user_id__=24643db006aa640-7f6400f169-2c377757; __tracker_user_id__=24643db006aa640-7f6400f169-2c377757; cheer_vid=2e3d741f2bca9370c8af36514acfbd0d_1662890454; env_orgcode=szw; __fast_sid__=24e29093458b400-78800073a5-03304e4e; o=szw; locationSearchAsset_smp=AssetCenter; TEST_MYSPACEX_SESSION_ID=bf0cbc6f0ff09f02b8d3c2c721a98983a58d44dc; __fast_sid__=24e497db08ae7c0-7dfc0007de-24656e54; test_myscrm_phpsessid=0noth4bpkr5kh669jpoilnvc42',
+                test: '12322'
+            },
+            withCredentials: true
+            // data:{
+            //     name:'zt'
+            // },
+            // method:'GET',
+            // params:{
+            //     name:'zt'
+            // }
+        }).then(res=>{
+            console.log(res,'res')
+            document.querySelector('.res-val').innerHTML = JSON.stringify(res.data)
+        }).catch(err=>{
+            console.log(err,'err')
+        })
+    }
+</script>
+</html>
