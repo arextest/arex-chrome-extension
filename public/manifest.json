@@ -1,6 +1,6 @@
 {
   "name": "Arex Chrome Extension",
-  "version": "1.0.4",
+  "version": "1.0.42",
   "manifest_version": 3,
   "icons": {
     "128": "logo-128.png"

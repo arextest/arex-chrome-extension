@@ -5,7 +5,11 @@ chrome.runtime.onMessage.addListener((req, sender, sendResponse) => {
     const cookieArr = handleCookie(payload.headers.cookie||payload.headers.Cookie,payload.url)
     Promise.all(cookieArr.map(i=>chrome.cookies.set(i))).then(r => {
         axios(payload).then(r => {
-            sendResponse(r)
+            sendResponse({
+                data: r.data,
+                status: r.status,
+                headers: handleResHeaders(r.headers)
+            })
         }).catch(err => {
             if (err.message && err.name) {
                 sendResponse({
@@ -16,7 +20,11 @@ chrome.runtime.onMessage.addListener((req, sender, sendResponse) => {
                     stack: err.stack
                 })
             } else {
-                sendResponse(err)
+                sendResponse({
+                    data: err.data,
+                    status: err.status,
+                    headers: handleResHeaders(err.headers)
+                })
             }
         })
     })
@@ -49,4 +57,15 @@ function handleCookie(cookie,url) {
     } catch (e) {
         return []
     }
+}
+
+function handleResHeaders(headers) {
+    const newHeaders = []
+    headers.forEach((v,k)=>{
+        newHeaders.push({
+            key:k,
+            value:v
+        })
+    })
+    return newHeaders
 }
