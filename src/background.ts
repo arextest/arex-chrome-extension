@@ -3,7 +3,14 @@ import axios from 'redaxios';
 chrome.runtime.onMessage.addListener((req, sender, sendResponse) => {
     const payload = req.payload
     const cookieArr = handleCookie(payload.headers.cookie||payload.headers.Cookie,payload.url)
-    Promise.all(cookieArr.map(i=>chrome.cookies.set(i))).then(r => {
+    Promise.all(cookieArr.map(i=>{
+        try {
+            chrome.cookies.set(i)
+        } catch (e) {
+            console.log(e)
+        }
+    })).then(_ => {
+        console.log(_)
         axios(payload).then(r => {
             sendResponse({
                 data: r.data,
