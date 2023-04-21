@@ -48,7 +48,7 @@ chrome.runtime.onMessage.addListener((req, sender, sendResponse) => {
     })).then(async (_) => {
         try {
             const response = await fetch(payload.url,payload)
-            const headers = response.headers
+            const headers = handleResHeaders(response.headers)
             const status = response.status
             if (isBase64(payload.data||'')){
                 const data = await response.blob()

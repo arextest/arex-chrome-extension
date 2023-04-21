@@ -1,6 +1,6 @@
 {
   "name": "Arex Chrome Extension",
-  "version": "1.0.50",
+  "version": "1.0.54",
   "manifest_version": 3,
   "description": "Provides more capabilities for Arex",
   "homepage_url": "https://arextest.github.io/arex-doc/",
