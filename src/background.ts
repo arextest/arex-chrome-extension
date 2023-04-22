@@ -1,44 +1,88 @@
-function base64ToBinary(base64) {
-    const raw = atob(base64);
-    const binary = new Uint8Array(raw.length);
-    for (let i = 0; i < raw.length; i++) {
-        binary[i] = raw.charCodeAt(i);
+class Payload {
+    constructor(payload:any) {
+        this.payload = payload
     }
-    return binary;
-}
-function isBase64(str){
-    if(str === '' || str.trim() === ''){
-        return false;
+    payload:{
+        url:string,
+        method:string
+        data:any
+        headers:{key:string,value:string}[]
+        params:{key:string,value:string}[]
     }
-    try{
-        return btoa(atob(str)) === str;
-    }catch(err){
-        return false;
-    }
-}
-function handlePayload(payload) {
-    if (isBase64(payload.data||'')){
-        return {
-            ...payload,
-            body: base64ToBinary(payload.data),
+    base64ToBinary(base64:any) {
+        const raw = atob(base64);
+        const binary = new Uint8Array(raw.length);
+        for (let i = 0; i < raw.length; i++) {
+            binary[i] = raw.charCodeAt(i);
         }
-    } else {
+        return binary;
+    }
+    static blobToBase64(blob:any) {
+        return new Promise((resolve, _) => {
+            const reader = new FileReader();
+            reader.onloadend = () => resolve(reader.result);
+            reader.readAsDataURL(blob);
+        });
+    }
+    getUrlAndRequestInit():{url:string,requestInit:any}{
         return {
-            ...payload,
-            body: payload.data
+            url:this.handleUrl(this.payload.url,this.payload.params),
+            requestInit:this.getRequestInit(this.payload)
+        }
+    }
+    handleUrl(url:any,params:any){
+        console.log(params,'params')
+        // 这便是对象，要修改
+        return url + (params||[]).reduce((p:any,c:any)=>{
+            return p+'&'+c.key+'='+c.value
+        },'?')
+    }
+    getRequestInit(p:any){
+        if (p.method === 'GET'){
+            return {
+                method:p.method,
+                headers:p.headers
+            }
+        } else {
+            return {
+                method:p.method,
+                headers:p.headers,
+                body:this.handleData(p.data),
+            }
+        }
+    }
+
+    handleData(data:any) {
+        if (Payload.isBase64(data||'')){
+            return this.base64ToBinary(data)
+        } else {
+            return this.chulidata(data)
+        }
+    }
+    chulidata(data: any) {
+        if (typeof data === 'object') {
+            return JSON.stringify(data);
+        } else {
+            return data;
+        }
+    }
+    static isBase64(str:any){
+        if(str === ''){
+            return false;
+        }
+        try{
+            return btoa(atob(str)) === str;
+        }catch(err){
+            return false;
         }
     }
 }
-function blobToBase64(blob) {
-    return new Promise((resolve, _) => {
-        const reader = new FileReader();
-        reader.onloadend = () => resolve(reader.result);
-        reader.readAsDataURL(blob);
-    });
-}
+
+
 chrome.runtime.onMessage.addListener((req, sender, sendResponse) => {
-    const payload = handlePayload(req.payload)
-    const cookieArr = handleCookie(payload.headers.cookie||payload.headers.Cookie,payload.url)
+    const {url,requestInit} = new Payload(req.payload).getUrlAndRequestInit()
+    console.log({url,requestInit})
+    const cookieArr = handleCookie(req.payload.headers.cookie||req.payload.headers.Cookie,req.payload.url)
     Promise.all(cookieArr.map(i=>{
         try {
             chrome.cookies.set(i)
@@ -47,12 +91,13 @@ chrome.runtime.onMessage.addListener((req, sender, sendResponse) => {
         }
     })).then(async (_) => {
         try {
-            const response = await fetch(payload.url,payload)
+            const response = await fetch(url,requestInit)
             const headers = handleResHeaders(response.headers)
             const status = response.status
-            if (isBase64(payload.data||'')){
+
+            if (Payload.isBase64(req.payload.data||'')){
                 const data = await response.blob()
-                const base64Data = await blobToBase64(data)
+                const base64Data = await Payload.blobToBase64(data)
                 sendResponse({
                     data:base64Data,
                     status,
@@ -66,7 +111,7 @@ chrome.runtime.onMessage.addListener((req, sender, sendResponse) => {
                     headers
                 })
             }
-        } catch (err) {
+        } catch (err:any) {
             if (err.message && err.name) {
                 sendResponse({
                     type: 'error',
@@ -87,23 +132,28 @@ chrome.runtime.onMessage.addListener((req, sender, sendResponse) => {
     return true
 })
 
-function cookieToJson(ck) {
+// @ts-ignore
+function cookieToJson(ck:any) {
     let cookieArr = ck.split(';')
     let obj = {}
-    cookieArr.forEach((i) => {
+    cookieArr.forEach((i:any) => {
         let arr = i.split("=");
+        // @ts-ignore
         obj[arr[0]] = arr[1];
     });
     return obj
 }
-
-function handleCookie(cookie,url) {
+// @ts-ignore
+function handleCookie(cookie:any,url:any) {
     try {
         const j = cookieToJson(cookie.replace(/\s+/g,''))
         return Object.keys(j).map(k => {
+            // @ts-ignore
+
             return ({
                 url: url,
                 name: k,
+                // @ts-ignore
                 value: j[k],
                 path: '/'
             })
@@ -113,9 +163,10 @@ function handleCookie(cookie,url) {
     }
 }
 
-function handleResHeaders(headers) {
-    const newHeaders = []
-    headers.forEach((v,k)=>{
+// @ts-ignore
+function handleResHeaders(headers:any) {
+    const newHeaders:any = []
+    headers.forEach((v:any,k:any)=>{
         newHeaders.push({
             key:k,
             value:v
