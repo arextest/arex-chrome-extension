@@ -31,11 +31,7 @@ class Payload {
         }
     }
     handleUrl(url:any,params:any){
-        console.log(params,'params')
-        // 这便是对象，要修改
-        return url + (params||[]).reduce((p:any,c:any)=>{
-            return p+'&'+c.key+'='+c.value
-        },'?')
+        return url + Object.keys(params||{}).map(i=>({key:i,value:params[i]})).reduce((p:any,c:any)=>{return p+'&'+c.key+'='+c.value},'?')
     }
     getRequestInit(p:any){
         if (p.method === 'GET'){
@@ -78,10 +74,17 @@ class Payload {
     }
 }
 
+function isJSONString(str:string) {
+    try {
+        JSON.parse(str);
+    } catch (e) {
+        return false;
+    }
+    return true;
+}
 
 chrome.runtime.onMessage.addListener((req, sender, sendResponse) => {
     const {url,requestInit} = new Payload(req.payload).getUrlAndRequestInit()
-    console.log({url,requestInit})
     const cookieArr = handleCookie(req.payload.headers.cookie||req.payload.headers.Cookie,req.payload.url)
     Promise.all(cookieArr.map(i=>{
         try {
@@ -105,11 +108,20 @@ chrome.runtime.onMessage.addListener((req, sender, sendResponse) => {
                 })
             } else {
                 const data = await response.text()
-                sendResponse({
-                    data:data,
-                    status,
-                    headers
-                })
+                if (isJSONString(data)){
+                    sendResponse({
+                        data:JSON.parse(data),
+                        status,
+                        headers
+                    })
+                } else {
+                    sendResponse({
+                        data:data,
+                        status,
+                        headers
+                    })
+                }
+
             }
         } catch (err:any) {
             if (err.message && err.name) {
