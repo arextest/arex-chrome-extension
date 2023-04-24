@@ -1,3 +1,4 @@
+// 1.0.54是还原到了老分支
 class Payload {
     constructor(payload:any) {
         this.payload = payload
