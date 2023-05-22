@@ -63,13 +63,14 @@ async function coreFetch(payload: Payload): Promise<SendResponse> {
         method,
         body,
         headers,
-    });
+    })
+    const responseHeaders:any = []
+    fetchResponse.headers.forEach((v,k)=>{
+        responseHeaders.push({key:k,value:v})
+    })
     return {
         data: await fetchResponse.text(),
-        headers: Object.keys(fetchResponse.headers).map((i) => ({
-            key: i,
-            value: fetchResponse.headers.get(i) || '',
-        })),
+        headers: responseHeaders,
         status: fetchResponse.status,
     };
 }
