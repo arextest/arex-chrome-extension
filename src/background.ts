@@ -56,9 +56,7 @@ async function coreFetch(payload: Payload): Promise<SendResponse> {
         });
         body = fd;
     }else if (contentType === undefined){
-        console.log(payloadBodyString,'payloadBody')
-        body = base64ToFile(payloadBodyString, 'vite.config.ts')
-        console.log(body,'body')
+        body = base64ToFile(payloadBodyString, '')
     }
 
     const fetchResponse = await fetch(url, {
@@ -67,7 +65,7 @@ async function coreFetch(payload: Payload): Promise<SendResponse> {
         headers,
     });
     return {
-        data: [],
+        data: await fetchResponse.text(),
         headers: Object.keys(fetchResponse.headers).map((i) => ({
             key: i,
             value: fetchResponse.headers.get(i) || '',

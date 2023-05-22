@@ -24,7 +24,12 @@ export default defineConfig({
         background: path.resolve(__dirname, 'src/background.ts'),
         'content-scripts': path.resolve(__dirname, 'src/content-scripts.ts'),
         'interceptor':path.resolve(__dirname,'src/interceptor.ts')
-        }
+        },
+      formats:['es']
     },
+    rollupOptions:{
+      output:{
+      }
+    }
   },
 });
