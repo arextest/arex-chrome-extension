@@ -25,6 +25,7 @@ interface Payload {
     headers: Record<string, string>;
 }
 async function coreFetch(payload: Payload): Promise<SendResponse> {
+    console.log(payload,'payload')
     // 先申明一个body变量
     let body: any = null;
     let headers = {};
@@ -38,7 +39,7 @@ async function coreFetch(payload: Payload): Promise<SendResponse> {
         payloadHeaders['content-type'] ||
         payloadHeaders['Content-Type'] ||
         undefined;
-    if (contentType === 'application/json') {
+    if (contentType === 'application/json'||payloadBodyString === null) {
         body = payloadBodyString;
         headers = payloadHeaders;
     } else if (contentType === 'multipart/form-data') {
@@ -58,6 +59,7 @@ async function coreFetch(payload: Payload): Promise<SendResponse> {
     }else if (contentType === undefined){
         body = base64ToFile(payloadBodyString, '')
     }
+
 
     const fetchResponse = await fetch(url, {
         method,
