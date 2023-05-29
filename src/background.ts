@@ -1,6 +1,6 @@
 // 类型定义
 import base64ToFile from './utils/base64ToFile';
-
+import {handleCookie, handleResHeaders, isJSONString, Payload as OldPayload} from './old/utils.ts'
 interface SendResponse {
     headers: { key: string; value: string }[];
     data: any;
@@ -56,10 +56,10 @@ async function coreFetch(payload: Payload): Promise<SendResponse> {
             }
         });
         body = fd;
-    }else if (contentType === undefined){
+    }else if (contentType === undefined&&!['GET','HEAD','DELETE'].includes(method)){
+        // 'GET','HEAD','DELETE'不支持body
         body = base64ToFile(payloadBodyString, '')
     }
-
 
     const fetchResponse = await fetch(url, {
         method,
@@ -83,10 +83,81 @@ chrome.runtime.onMessage.addListener(
         sender,
         sendResponse: (response: SendResponse) => void,
     ) => {
-        console.log(sender)
-        coreFetch(message.payload).then(({ data, headers, status })=>{
-            sendResponse({ data, headers, status });
-        });
+         console.log(sender)
+         const cookieArr = handleCookie(message.payload.headers.cookie||message.payload.headers.Cookie,message.payload.url)
+         // @ts-ignore
+         if (message.v === '0.3.0'){
+             Promise.all(cookieArr.map(i=>{
+                 try {
+                     chrome.cookies.set(i)
+                 } catch (e) {
+                     console.log(e)
+                 }
+             })).then(()=>{
+                 coreFetch(message.payload).then(({ data, headers, status })=>{
+                     sendResponse({ data, headers, status });
+                 });
+             })
+         } else {
+             const {url,requestInit} = new OldPayload(message.payload).getUrlAndRequestInit()
+             Promise.all(cookieArr.map(i=>{
+                 try {
+                     chrome.cookies.set(i)
+                 } catch (e) {
+                     console.log(e)
+                 }
+             })).then(async (_) => {
+                 try {
+                     const response = await fetch(url,requestInit)
+                     const headers = handleResHeaders(response.headers)
+                     const status = response.status
+
+                     // @ts-ignore
+                     if (OldPayload.isBase64(message.payload.data||'')){
+                         const data = await response.blob()
+                         const base64Data = await OldPayload.blobToBase64(data)
+                         sendResponse({
+                             data:base64Data,
+                             status,
+                             headers
+                         })
+                     } else {
+                         const data = await response.text()
+                         if (isJSONString(data)){
+                             sendResponse({
+                                 data:JSON.parse(data),
+                                 status,
+                                 headers
+                             })
+                         } else {
+                             sendResponse({
+                                 data:data,
+                                 status,
+                                 headers
+                             })
+                         }
+
+                     }
+                 } catch (err:any) {
+                     if (err.message && err.name) {
+                         sendResponse({
+                             // @ts-ignore
+                             type: 'error',
+                             cause: err.cause,
+                             message: err.message,
+                             name: err.name,
+                             stack: err.stack
+                         })
+                     } else {
+                         sendResponse({
+                             data: err.data,
+                             status: err.status,
+                             headers: handleResHeaders(err.headers)
+                         })
+                     }
+                 }
+             })
+         }
         return true;
     },
 );
