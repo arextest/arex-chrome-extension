@@ -96,6 +96,23 @@ chrome.runtime.onMessage.addListener(
              })).then(()=>{
                  coreFetch(message.payload).then(({ data, headers, status })=>{
                      sendResponse({ data, headers, status });
+                 }).catch(err=>{
+                     if (err.message && err.name) {
+                         sendResponse({
+                             // @ts-ignore
+                             type: 'error',
+                             cause: err.cause,
+                             message: err.message,
+                             name: err.name,
+                             stack: err.stack
+                         })
+                     } else {
+                         sendResponse({
+                             data: err.data,
+                             status: err.status,
+                             headers: []
+                         })
+                     }
                  });
              })
          } else {
