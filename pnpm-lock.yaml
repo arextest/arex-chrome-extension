@@ -10,6 +10,9 @@ devDependencies:
   '@types/testing-library__jest-dom':
     specifier: ^5.14.5
     version: 5.14.5
+  adm-zip:
+    specifier: ^0.5.10
+    version: 0.5.10
   jsdom:
     specifier: ^22.0.0
     version: 22.0.0
@@ -439,6 +442,11 @@ packages:
     resolution: {integrity: sha512-xjIYgE8HBrkpd/sJqOGNspf8uHG+NOHGOw6a/Urj8taM2EXfdNAH2oFcPeIFfsv3+kz/mJrS5VuMqbNLjCa2vw==}
     engines: {node: '>=0.4.0'}
     hasBin: true
+    dev: true
+
+  /adm-zip@0.5.10:
+    resolution: {integrity: sha512-x0HvcHqVJNTPk/Bw8JbLWlWoo6Wwnsug0fnYYro1HBrjxZ3G7/AZk7Ahv8JwDe1uIcz8eBqvu86FuF1POiG7vQ==}
+    engines: {node: '>=6.0'}
     dev: true
 
   /agent-base@6.0.2:

@@ -1,4 +1,4 @@
-// 1.0.61是还原到了老分支
+// 1.0.62是还原到了老分支
 export class Payload {
     constructor(payload:any) {
         this.payload = payload
