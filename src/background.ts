@@ -59,6 +59,8 @@ async function coreFetch(payload: Payload): Promise<SendResponse> {
     }else if (contentType === undefined&&!['GET','HEAD','DELETE'].includes(method)){
         // 'GET','HEAD','DELETE'不支持body
         body = base64ToFile(payloadBodyString, '')
+    }else {
+        headers = payloadHeaders;
     }
 
     const fetchResponse = await fetch(url, {
